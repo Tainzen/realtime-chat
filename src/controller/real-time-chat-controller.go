@@ -2,8 +2,8 @@ package controller
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/Tainzen/realtime-chat/src/model"
+	"github.com/Tainzen/realtime-chat/src/controller/dto"
 	"github.com/Tainzen/realtime-chat/src/repository"
 	"net/http"
 )
@@ -22,8 +22,8 @@ const CreateChatRoomPath = "/chat-rooms"
 // @Description Create new chat room and saves in mongo db
 // @Param ChatRoom body model.ChatRoom true "Request body Chat Room details"
 // @Produce json
-// @Success 200 {object} dto.ResponseLogin "Success"
-// @Failure 500 {object} dto.ErrorDTO "Internal Server Error"
+// @Success 200 {object} dto.SuccessMessage "Success"
+// @Failure 500 {object} dto.ErrorMessage "Internal Server Error"
 // @Router /chat-rooms [post]
 func (realTimeChatController *RealTimeChatController) CreateChatRoom(w http.ResponseWriter, r *http.Request) {
 
@@ -31,23 +31,31 @@ func (realTimeChatController *RealTimeChatController) CreateChatRoom(w http.Resp
 	w.Header().Set("Content-Type", "application/json")
 
 	var chatRoom model.ChatRoom
+	var errMessage dto.ErrorMessage
 
 	// storing chatRoom
 	err := json.NewDecoder(r.Body).Decode(&chatRoom)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"message":"` + err.Error() + `"}`))
+		errMessage.Message="Error decoding request body"
+		errMessage.Description=err.Error()
+		json.NewEncoder(w).Encode(errMessage)
 	}
 
-	//create chat room
+	// create chat room
 	result, err := realTimeChatRepository.CreateChatRoom(chatRoom)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"message":"` + err.Error() + `"}`))
+		errMessage.Message="Error creating chat-room"
+		errMessage.Description=err.Error()
+		json.NewEncoder(w).Encode(errMessage)
 	}
 
-	fmt.Println("Inserted a single document: ", result)
-	// return the mongodb ID of generated document
-	json.NewEncoder(w).Encode(result)
+	// response message body
+	response:=dto.SuccessMessage{
+		Message:"Chat room created successfully!",
+		ID:result,
+	}
 
+	json.NewEncoder(w).Encode(response)
 }

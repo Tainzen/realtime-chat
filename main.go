@@ -20,8 +20,10 @@ func main() {
 	// Instantiate controllers
 	realTimeChatController := controller.RealTimeChatController{}
 
-	api := route.PathPrefix(os.Getenv("SVR_BASEPATH")).Subrouter()
+	basepath:=os.Getenv("SVR_BASEPATH")
+	api := route.PathPrefix(basepath).Subrouter()
 	api.HandleFunc(controller.CreateChatRoomPath, realTimeChatController.CreateChatRoom).Methods("POST")
+	
 	http.ListenAndServe(":8082", api)
 }
 

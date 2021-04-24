@@ -1,0 +1,52 @@
+basePath: /realtime-chat/api/v1
+definitions:
+  dto.ErrorMessage:
+    properties:
+      description:
+        type: string
+      message:
+        type: string
+    type: object
+  dto.SuccessMessage:
+    properties:
+      id:
+        type: object
+      message:
+        type: string
+    type: object
+  model.ChatRoom:
+    properties:
+      _id:
+        type: string
+      name:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: This microservice serves as Realtime chat backend
+  title: RealTime-Chat Microservice
+  version: "1"
+paths:
+  /chat-rooms:
+    post:
+      description: Create new chat room and saves in mongo db
+      parameters:
+      - description: Request body Chat Room details
+        in: body
+        name: ChatRoom
+        required: true
+        schema:
+          $ref: '#/definitions/model.ChatRoom'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/dto.SuccessMessage'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorMessage'
+      summary: Create new chat room API
+swagger: "2.0"
