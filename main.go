@@ -1,7 +1,7 @@
 package main
 
 import (
-	"os"
+	//"os"
 	
 	"github.com/Tainzen/realtime-chat/src/controller"
 	"github.com/gorilla/mux"
@@ -20,11 +20,12 @@ func main() {
 	// Instantiate controllers
 	realTimeChatController := controller.RealTimeChatController{}
 
-	basepath:=os.Getenv("SVR_BASEPATH")
-	api := route.PathPrefix(basepath).Subrouter()
+	//basepath:=os.Getenv("/realtime-chat")
+	api := route.PathPrefix("/realtime-chat/api/v1").Subrouter()
 	api.HandleFunc(controller.CreateChatRoomPath, realTimeChatController.CreateChatRoom).Methods("POST")
-	
-	http.ListenAndServe(":8082", api)
+	api.HandleFunc(controller.CreateUserPath, realTimeChatController.CreateUser).Methods("POST")
+	api.HandleFunc(controller.CreateMessagePath, realTimeChatController.CreateMessage).Methods("POST")
+	http.ListenAndServe(":8081", api)
 }
 
 

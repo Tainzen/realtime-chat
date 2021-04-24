@@ -26,19 +26,59 @@ var doc = `{
     "paths": {
         "/chat-rooms": {
             "post": {
-                "description": "Create new chat room and saves in mongo db",
+                "description": "Create new user and saves in mongo db",
                 "produces": [
                     "application/json"
                 ],
-                "summary": "Create new chat room API",
+                "summary": "Create new user API",
                 "parameters": [
                     {
-                        "description": "Request body Chat Room details",
-                        "name": "ChatRoom",
+                        "description": "Request body has user details",
+                        "name": "User",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.ChatRoom"
+                            "$ref": "#/definitions/model.User"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SuccessMessage"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorMessage"
+                        }
+                    }
+                }
+            }
+        },
+        "/messages": {
+            "post": {
+                "description": "Create new message and saves in mongo db",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Create new message API",
+                "parameters": [
+                    {
+                        "description": "Request body has message details",
+                        "name": "Message",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.Message"
                         }
                     }
                 ],
@@ -89,6 +129,37 @@ var doc = `{
                     "type": "string"
                 },
                 "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.Message": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "body": {
+                    "type": "string"
+                },
+                "chatroom_id": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.User": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "username": {
                     "type": "string"
                 }
             }
