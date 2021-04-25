@@ -1,7 +1,7 @@
 package main
 
 import (
-	//"os"
+	"os"
 	
 	"github.com/Tainzen/realtime-chat/src/controller"
 	"github.com/gorilla/mux"
@@ -20,9 +20,9 @@ func main() {
 	// Instantiate controllers
 	realTimeChatController := controller.RealTimeChatController{}
 
-	//basepath:=os.Getenv("/realtime-chat")
 	api := route.PathPrefix("/realtime-chat/api/v1").Subrouter()
 	//chat-rooms apis
+	api.HandleFunc("/", realTimeChatController.HealthCheck).Methods("GET")
 	api.HandleFunc(controller.CreateChatRoomPath, realTimeChatController.CreateChatRoom).Methods("POST")
 	api.HandleFunc(controller.GetAllChatRoomsPath, realTimeChatController.GetAllChatRoom).Methods("GET")
 	api.HandleFunc(controller.GetChatRoomPath, realTimeChatController.GetChatRoom).Methods("GET")
@@ -32,8 +32,10 @@ func main() {
 	api.HandleFunc(controller.CreateUserPath, realTimeChatController.CreateUser).Methods("POST")
 	api.HandleFunc(controller.GetUserPath, realTimeChatController.GetUser).Methods("GET")
 	api.HandleFunc(controller.UpdateUserPath, realTimeChatController.UpdateUser).Methods("PUT")
-	api.HandleFunc(controller.CreateMessagePath, realTimeChatController.CreateMessage).Methods("POST")
-	http.ListenAndServe(":8081", api)
+	//chat-room-websocker apis
+	api.HandleFunc(controller.ChatRoomWebsocket, realTimeChatController.WebSocketHandler).Methods("GET")
+	
+	http.ListenAndServe(os.Getenv("SVR_PORT"), api)
 }
 
 

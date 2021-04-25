@@ -2,23 +2,58 @@ package controller
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/Tainzen/realtime-chat/src/controller/dto"
 	"github.com/Tainzen/realtime-chat/src/model"
 	"github.com/Tainzen/realtime-chat/src/repository"
-	//"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	// "go.mongodb.org/mongo-driver/mongo/options"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/websocket"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
 )
+
+//RoomMap
+var RoomMap = make(map[string]Room)
+
+//Room to keep connections and broadcast message
+type Room struct {
+	Clients   map[*websocket.Conn]bool
+	Broadcast chan dto.Message
+}
+
+//upgrader
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+}
 
 //realTimeChatRepository to save into monogdb
 var realTimeChatRepository = repository.RealTimeChatRepository{}
 
 // RealTimeChatController - Structure
 type RealTimeChatController struct{}
+
+// HealthCheckPath - URL Path for health check
+const HealthCheckPath = "/"
+
+// HealthCheck Controller
+// @Summary Health check API
+// @Description Health check API
+// @Produce json
+// @Success 200 {object} dto.HealthCheckResponse "Success"
+// @Failure 500 {object} dto.ErrorMessage "Internal Server Error"
+// @Router / [get]
+func (realTimeChatController *RealTimeChatController) HealthCheck(w http.ResponseWriter, r *http.Request) {
+
+	//adding Content-type
+	w.Header().Set("Content-Type", "application/json")
+
+	response := dto.HealthCheckResponse{
+		Message: "Realtime chat backend",
+	}
+
+	json.NewEncoder(w).Encode(response)
+}
 
 // CreateChatRoomPath - URL Path to create chat room
 const CreateChatRoomPath = "/chat-rooms"
@@ -137,7 +172,11 @@ func (realTimeChatController *RealTimeChatController) GetChatRoom(w http.Respons
 	param := mux.Vars(r)["room_id"]
 	roomid, err := primitive.ObjectIDFromHex(param)
 	if err != nil {
-		fmt.Printf(err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		errMessage.Message = "Error while converting roomid to ObjectID"
+		errMessage.Description = err.Error()
+		json.NewEncoder(w).Encode(errMessage)
+		return
 	}
 
 	// get chat room by id
@@ -176,7 +215,11 @@ func (realTimeChatController *RealTimeChatController) UpdateChatRoom(w http.Resp
 	param := mux.Vars(r)["room_id"]
 	roomid, err := primitive.ObjectIDFromHex(param)
 	if err != nil {
-		fmt.Printf(err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		errMessage.Message = "Error while converting roomid to ObjectID"
+		errMessage.Description = err.Error()
+		json.NewEncoder(w).Encode(errMessage)
+		return
 	}
 
 	chatRoom.ID = roomid
@@ -231,7 +274,11 @@ func (realTimeChatController *RealTimeChatController) DeleteChatRoom(w http.Resp
 	param := mux.Vars(r)["room_id"]
 	roomid, err := primitive.ObjectIDFromHex(param)
 	if err != nil {
-		fmt.Printf(err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		errMessage.Message = "Error while converting roomid to ObjectID"
+		errMessage.Description = err.Error()
+		json.NewEncoder(w).Encode(errMessage)
+		return
 	}
 
 	// update chat room
@@ -355,7 +402,11 @@ func (realTimeChatController *RealTimeChatController) GetUser(w http.ResponseWri
 	param := mux.Vars(r)["uid"]
 	uid, err := primitive.ObjectIDFromHex(param)
 	if err != nil {
-		fmt.Printf(err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		errMessage.Message = "Error while converting uid to ObjectID"
+		errMessage.Description = err.Error()
+		json.NewEncoder(w).Encode(errMessage)
+		return
 	}
 
 	// get user by id
@@ -402,7 +453,11 @@ func (realTimeChatController *RealTimeChatController) UpdateUser(w http.Response
 	param := mux.Vars(r)["uid"]
 	uid, err := primitive.ObjectIDFromHex(param)
 	if err != nil {
-		fmt.Printf(err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		errMessage.Message = "Error while converting uid to ObjectID"
+		errMessage.Description = err.Error()
+		json.NewEncoder(w).Encode(errMessage)
+		return
 	}
 
 	// storing request user body
@@ -471,51 +526,110 @@ func (realTimeChatController *RealTimeChatController) UpdateUser(w http.Response
 
 }
 
-// CreateMessagePath - URL Path to create message
-const CreateMessagePath = "/users/{uid}/chat-rooms/{room_id}/messages"
+// handleConnections handles all the connection on websockets
+func handleConnections(ws *websocket.Conn, roomid string) (Room, error) {
 
-// CreateMessage controller
-// @Summary Create new message API
-// @Description Create new message and saves in mongo db
-// @Param Message body model.Message true "Request body has message details"
+	var room Room
+
+	value, _ := RoomMap[roomid]
+
+	room = value
+
+	// Register our new client
+	room.Clients[ws] = true
+
+	for {
+		var msg dto.Message
+
+		// Read in a new message as JSON and map it to a Message object
+		err := ws.ReadJSON(&msg)
+		if err != nil {
+			delete(room.Clients, ws)
+			break
+		}
+		//save message in db
+		rid, err := primitive.ObjectIDFromHex(roomid)
+		if err != nil {
+			return room, err
+		}
+
+		uid, err := primitive.ObjectIDFromHex(msg.UserID)
+		if err != nil {
+			return room, err
+		}
+
+		m := model.Message{
+			UserID:     uid,
+			ChatRoomID: rid,
+			Body:       msg.Body,
+		}
+
+		// get user by id
+		_, err = realTimeChatRepository.FindUserByID(uid)
+		if err != nil {
+			return room, err
+		}
+
+		//create message
+		_, err = realTimeChatRepository.CreateMessage(m)
+		if err != nil {
+			return room, err
+		}
+
+		// Send the newly received message to the broadcast channel
+		room.Broadcast <- msg
+
+	}
+
+	return room, nil
+
+}
+
+//handleMessages function that writes into connection
+func handleMessages(room Room) {
+
+	for {
+		// Grab the next message from the broadcast channel
+		msg := <-room.Broadcast
+		// Send it out to every client that is currently connected
+		for client := range room.Clients {
+			err := client.WriteJSON(msg)
+			if err != nil {
+				client.Close()
+				delete(room.Clients, client)
+			}
+		}
+	}
+
+}
+
+const ChatRoomWebsocket = "/ws/chat-room/{room_id}"
+
+// WebSocketHandler controller
+// @Summary Websocket handler API
+// @Description Websocket handler api to initiate websockets
+// @Param roomid path string true "room id"
+// @Param User body dto.Message true "Request body user id and message body"
 // @Produce json
 // @Success 200 {object} dto.SuccessMessage "Success"
 // @Failure 500 {object} dto.ErrorMessage "Internal Server Error"
-// @Router /messages [post]
-func (realTimeChatController *RealTimeChatController) CreateMessage(w http.ResponseWriter, r *http.Request) {
+// @Router /ws/chat-room/{room_id} [get]
+func (realTimeChatController *RealTimeChatController) WebSocketHandler(w http.ResponseWriter, r *http.Request) {
 
-	//set header
-	w.Header().Set("Content-Type", "application/json")
-
-	//get paramaters
-	param := mux.Vars(r)["room_id"]
-	roomid, err := primitive.ObjectIDFromHex(param)
-	if err != nil {
-		fmt.Printf(err.Error())
-	}
-	param = mux.Vars(r)["uid"]
-	uid, err := primitive.ObjectIDFromHex(param)
-	if err != nil {
-		fmt.Printf(err.Error())
-	}
-
-	var message model.Message
 	var errMessage dto.ErrorMessage
 
-	//storing Message
-	err = json.NewDecoder(r.Body).Decode(&message)
+	//get paramaters
+	rid := mux.Vars(r)["room_id"]
+	roomid, err := primitive.ObjectIDFromHex(rid)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		errMessage.Message = "Error decoding request body"
+		errMessage.Message = "Error while converting roomid to ObjectID"
 		errMessage.Description = err.Error()
 		json.NewEncoder(w).Encode(errMessage)
 		return
 	}
 
-	message.ChatRoomID = roomid
-	message.UserID = uid
-
-	// get chat room by id
+	//get chat room by id to check if room id is present or not
 	_, err = realTimeChatRepository.FindChatRoomByID(roomid)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -525,31 +639,46 @@ func (realTimeChatController *RealTimeChatController) CreateMessage(w http.Respo
 		return
 	}
 
-	// get chat room by id
-	_, err = realTimeChatRepository.FindUserByID(uid)
+	//resolve origin
+	upgrader.CheckOrigin = func(r *http.Request) bool {
+		return true
+	}
+
+	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		errMessage.Message = "Error creating chat-room"
+		errMessage.Message = "Error while upgrading http connection to websockets"
 		errMessage.Description = err.Error()
 		json.NewEncoder(w).Encode(errMessage)
 		return
 	}
 
-	//create message
-	result, err := realTimeChatRepository.CreateMessage(message)
+	defer conn.Close()
+
+	//initailizing room
+	var room Room
+	_, ok := RoomMap[rid]
+
+	room.Clients = map[*websocket.Conn]bool{}
+	room.Broadcast = nil
+
+	//register connection
+	if ok == false {
+		RoomMap[rid] = room
+	}
+
+	//handle connection
+	cr, err := handleConnections(conn, rid)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		errMessage.Message = "Error creating message"
+		errMessage.Message = "Error broadcasting message"
 		errMessage.Description = err.Error()
 		json.NewEncoder(w).Encode(errMessage)
 		return
 	}
 
-	//response message body
-	response := dto.SuccessMessage{
-		Message: "Message saved successfully!",
-		ID:      result,
-	}
+	RoomMap[rid] = cr
 
-	json.NewEncoder(w).Encode(response)
+	go handleMessages(cr)
+
 }

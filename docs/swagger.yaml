@@ -7,6 +7,18 @@ definitions:
       message:
         type: string
     type: object
+  dto.HealthCheckResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  dto.Message:
+    properties:
+      body:
+        type: string
+      user_id:
+        type: string
+    type: object
   dto.RequestUserUpdate:
     properties:
       _id:
@@ -50,17 +62,6 @@ definitions:
       name:
         type: string
     type: object
-  model.Message:
-    properties:
-      _id:
-        type: string
-      body:
-        type: string
-      chatroom_id:
-        type: string
-      user_id:
-        type: string
-    type: object
   model.User:
     properties:
       _id:
@@ -80,6 +81,21 @@ info:
   title: RealTime-Chat Microservice
   version: "1"
 paths:
+  /:
+    get:
+      description: Health check API
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/dto.HealthCheckResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorMessage'
+      summary: Health check API
   /chat-rooms:
     delete:
       description: Delete chat room by id mongo db
@@ -168,28 +184,6 @@ paths:
           schema:
             $ref: '#/definitions/dto.ErrorMessage'
       summary: Update chat room API
-  /messages:
-    post:
-      description: Create new message and saves in mongo db
-      parameters:
-      - description: Request body has message details
-        in: body
-        name: Message
-        required: true
-        schema:
-          $ref: '#/definitions/model.Message'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Success
-          schema:
-            $ref: '#/definitions/dto.SuccessMessage'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.ErrorMessage'
-      summary: Create new message API
   /users:
     get:
       description: Get user by id
@@ -267,4 +261,31 @@ paths:
           schema:
             $ref: '#/definitions/dto.ErrorMessage'
       summary: Update User API
+  /ws/chat-room/{room_id}:
+    get:
+      description: Websocket handler api to initiate websockets
+      parameters:
+      - description: room id
+        in: path
+        name: roomid
+        required: true
+        type: string
+      - description: Request body user id and message body
+        in: body
+        name: User
+        required: true
+        schema:
+          $ref: '#/definitions/dto.Message'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/dto.SuccessMessage'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorMessage'
+      summary: Websocket handler API
 swagger: "2.0"

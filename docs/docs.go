@@ -24,6 +24,29 @@ var doc = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/": {
+            "get": {
+                "description": "Health check API",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Health check API",
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "$ref": "#/definitions/dto.HealthCheckResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorMessage"
+                        }
+                    }
+                }
+            }
+        },
         "/chat-rooms": {
             "get": {
                 "description": "Get chat room by id",
@@ -139,40 +162,6 @@ var doc = `{
                         "name": "roomid",
                         "in": "path",
                         "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Success",
-                        "schema": {
-                            "$ref": "#/definitions/dto.SuccessMessage"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ErrorMessage"
-                        }
-                    }
-                }
-            }
-        },
-        "/messages": {
-            "post": {
-                "description": "Create new message and saves in mongo db",
-                "produces": [
-                    "application/json"
-                ],
-                "summary": "Create new message API",
-                "parameters": [
-                    {
-                        "description": "Request body has message details",
-                        "name": "Message",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.Message"
-                        }
                     }
                 ],
                 "responses": {
@@ -307,6 +296,47 @@ var doc = `{
                     }
                 }
             }
+        },
+        "/ws/chat-room/{room_id}": {
+            "get": {
+                "description": "Websocket handler api to initiate websockets",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Websocket handler API",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "room id",
+                        "name": "roomid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Request body user id and message body",
+                        "name": "User",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.Message"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SuccessMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorMessage"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -317,6 +347,25 @@ var doc = `{
                     "type": "string"
                 },
                 "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.HealthCheckResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.Message": {
+            "type": "object",
+            "properties": {
+                "body": {
+                    "type": "string"
+                },
+                "user_id": {
                     "type": "string"
                 }
             }
@@ -382,23 +431,6 @@ var doc = `{
                     "type": "string"
                 },
                 "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "model.Message": {
-            "type": "object",
-            "properties": {
-                "_id": {
-                    "type": "string"
-                },
-                "body": {
-                    "type": "string"
-                },
-                "chatroom_id": {
-                    "type": "string"
-                },
-                "user_id": {
                     "type": "string"
                 }
             }
