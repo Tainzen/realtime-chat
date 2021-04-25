@@ -33,11 +33,11 @@ func Db() *mongo.Client {
 		log.Panic().Msgf("Error connecting to mongodb")
 	}
 
-	// Check the connection to MongoDB
-	err = client.Ping(context.TODO(), nil)
-	if err != nil {
-		log.Panic().Msgf("Error while pinging to mongodb")
-	}
+	// // Check the connection to MongoDB
+	// err = client.Ping(context.TODO(), nil)
+	// if err != nil {
+	// 	log.Panic().Msgf("Error while pinging to mongodb")
+	// }
 
 	log.Info().Msgf("Successfully established connection to mongodb")
 	return client

@@ -25,20 +25,57 @@ var doc = `{
     "basePath": "{{.BasePath}}",
     "paths": {
         "/chat-rooms": {
-            "post": {
-                "description": "Create new user and saves in mongo db",
+            "get": {
+                "description": "Get chat room by id",
                 "produces": [
                     "application/json"
                 ],
-                "summary": "Create new user API",
+                "summary": "Get chat room by id API",
                 "parameters": [
                     {
-                        "description": "Request body has user details",
-                        "name": "User",
+                        "type": "string",
+                        "description": "room id",
+                        "name": "roomid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "$ref": "#/definitions/model.ChatRoom"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorMessage"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update new chat room and saves in mongo db",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Update chat room API",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "room id",
+                        "name": "roomid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Request body Chat Room details",
+                        "name": "ChatRoom",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.User"
+                            "$ref": "#/definitions/model.ChatRoom"
                         }
                     }
                 ],
@@ -49,10 +86,66 @@ var doc = `{
                             "$ref": "#/definitions/dto.SuccessMessage"
                         }
                     },
-                    "400": {
-                        "description": "Bad Request",
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/dto.ErrorMessage"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create new chat room and saves in mongo db",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Create new chat room API",
+                "parameters": [
+                    {
+                        "description": "Request body Chat Room details",
+                        "name": "ChatRoom",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.ChatRoom"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SuccessMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorMessage"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete chat room by id mongo db",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Delete new chat room API",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "room id",
+                        "name": "roomid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SuccessMessage"
                         }
                     },
                     "500": {
@@ -97,6 +190,123 @@ var doc = `{
                     }
                 }
             }
+        },
+        "/users": {
+            "get": {
+                "description": "Get user by id",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Get user by id API",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "user id",
+                        "name": "uid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "$ref": "#/definitions/dto.User"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorMessage"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create new user and saves in mongo db",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Create new user API",
+                "parameters": [
+                    {
+                        "description": "Request body has user details",
+                        "name": "User",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.User"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SuccessMessage"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorMessage"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{uid}": {
+            "put": {
+                "description": "Update user and saves in mongo db",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Update User API",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "user id",
+                        "name": "userid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Request body user details",
+                        "name": "User",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.RequestUserUpdate"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SuccessMessage"
+                        }
+                    },
+                    "401": {
+                        "description": "Wrong Password",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorMessage"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -111,6 +321,32 @@ var doc = `{
                 }
             }
         },
+        "dto.RequestUserUpdate": {
+            "type": "object",
+            "required": [
+                "firstname",
+                "lastname",
+                "newpassword",
+                "oldpassword"
+            ],
+            "properties": {
+                "_id": {
+                    "type": "object"
+                },
+                "firstname": {
+                    "type": "string"
+                },
+                "lastname": {
+                    "type": "string"
+                },
+                "newpassword": {
+                    "type": "string"
+                },
+                "oldpassword": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.SuccessMessage": {
             "type": "object",
             "properties": {
@@ -118,6 +354,23 @@ var doc = `{
                     "type": "object"
                 },
                 "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.User": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "type": "object"
+                },
+                "firstname": {
+                    "type": "string"
+                },
+                "lastname": {
+                    "type": "string"
+                },
+                "username": {
                     "type": "string"
                 }
             }
@@ -154,6 +407,12 @@ var doc = `{
             "type": "object",
             "properties": {
                 "_id": {
+                    "type": "string"
+                },
+                "firstname": {
+                    "type": "string"
+                },
+                "lastname": {
                     "type": "string"
                 },
                 "password": {

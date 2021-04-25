@@ -7,11 +7,40 @@ definitions:
       message:
         type: string
     type: object
+  dto.RequestUserUpdate:
+    properties:
+      _id:
+        type: object
+      firstname:
+        type: string
+      lastname:
+        type: string
+      newpassword:
+        type: string
+      oldpassword:
+        type: string
+    required:
+    - firstname
+    - lastname
+    - newpassword
+    - oldpassword
+    type: object
   dto.SuccessMessage:
     properties:
       id:
         type: object
       message:
+        type: string
+    type: object
+  dto.User:
+    properties:
+      _id:
+        type: object
+      firstname:
+        type: string
+      lastname:
+        type: string
+      username:
         type: string
     type: object
   model.ChatRoom:
@@ -36,6 +65,10 @@ definitions:
     properties:
       _id:
         type: string
+      firstname:
+        type: string
+      lastname:
+        type: string
       password:
         type: string
       username:
@@ -48,6 +81,136 @@ info:
   version: "1"
 paths:
   /chat-rooms:
+    delete:
+      description: Delete chat room by id mongo db
+      parameters:
+      - description: room id
+        in: path
+        name: roomid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/dto.SuccessMessage'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorMessage'
+      summary: Delete new chat room API
+    get:
+      description: Get chat room by id
+      parameters:
+      - description: room id
+        in: path
+        name: roomid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/model.ChatRoom'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorMessage'
+      summary: Get chat room by id API
+    post:
+      description: Create new chat room and saves in mongo db
+      parameters:
+      - description: Request body Chat Room details
+        in: body
+        name: ChatRoom
+        required: true
+        schema:
+          $ref: '#/definitions/model.ChatRoom'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/dto.SuccessMessage'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorMessage'
+      summary: Create new chat room API
+    put:
+      description: Update new chat room and saves in mongo db
+      parameters:
+      - description: room id
+        in: path
+        name: roomid
+        required: true
+        type: string
+      - description: Request body Chat Room details
+        in: body
+        name: ChatRoom
+        required: true
+        schema:
+          $ref: '#/definitions/model.ChatRoom'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/dto.SuccessMessage'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorMessage'
+      summary: Update chat room API
+  /messages:
+    post:
+      description: Create new message and saves in mongo db
+      parameters:
+      - description: Request body has message details
+        in: body
+        name: Message
+        required: true
+        schema:
+          $ref: '#/definitions/model.Message'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/dto.SuccessMessage'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorMessage'
+      summary: Create new message API
+  /users:
+    get:
+      description: Get user by id
+      parameters:
+      - description: user id
+        in: path
+        name: uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/dto.User'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorMessage'
+      summary: Get user by id API
     post:
       description: Create new user and saves in mongo db
       parameters:
@@ -73,16 +236,21 @@ paths:
           schema:
             $ref: '#/definitions/dto.ErrorMessage'
       summary: Create new user API
-  /messages:
-    post:
-      description: Create new message and saves in mongo db
+  /users/{uid}:
+    put:
+      description: Update user and saves in mongo db
       parameters:
-      - description: Request body has message details
+      - description: user id
+        in: path
+        name: userid
+        required: true
+        type: string
+      - description: Request body user details
         in: body
-        name: Message
+        name: User
         required: true
         schema:
-          $ref: '#/definitions/model.Message'
+          $ref: '#/definitions/dto.RequestUserUpdate'
       produces:
       - application/json
       responses:
@@ -90,9 +258,13 @@ paths:
           description: Success
           schema:
             $ref: '#/definitions/dto.SuccessMessage'
+        "401":
+          description: Wrong Password
+          schema:
+            $ref: '#/definitions/dto.ErrorMessage'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/dto.ErrorMessage'
-      summary: Create new message API
+      summary: Update User API
 swagger: "2.0"
